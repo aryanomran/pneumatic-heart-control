@@ -1,0 +1,3 @@
+/Users/aryanabbasgholitabaromran/Desktop/My Files/Saxion/Internship/firmware/cmake-build-debug-stm32-arm/CMakeFiles/firmware.dir
+/Users/aryanabbasgholitabaromran/Desktop/My Files/Saxion/Internship/firmware/cmake-build-debug-stm32-arm/CMakeFiles/edit_cache.dir
+/Users/aryanabbasgholitabaromran/Desktop/My Files/Saxion/Internship/firmware/cmake-build-debug-stm32-arm/CMakeFiles/rebuild_cache.dir
