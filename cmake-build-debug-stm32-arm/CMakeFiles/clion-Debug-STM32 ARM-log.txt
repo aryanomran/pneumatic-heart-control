@@ -1,4 +1,4 @@
 /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=/Applications/CLion.app/Contents/bin/ninja/mac/aarch64/ninja -DCMAKE_C_COMPILER=/Applications/ARM/bin/arm-none-eabi-gcc -DCMAKE_CXX_COMPILER=/Applications/ARM/bin/arm-none-eabi-g++ "-DCMAKE_TOOLCHAIN_FILE=/Users/aryanabbasgholitabaromran/Desktop/My Files/Saxion/Internship/firmware/arm-gcc-toolchain.cmake" -G Ninja -S "/Users/aryanabbasgholitabaromran/Desktop/My Files/Saxion/Internship/firmware" -B "/Users/aryanabbasgholitabaromran/Desktop/My Files/Saxion/Internship/firmware/cmake-build-debug-stm32-arm"
--- Configuring done (0.3s)
+-- Configuring done (0.1s)
 -- Generating done (0.0s)
 -- Build files have been written to: /Users/aryanabbasgholitabaromran/Desktop/My Files/Saxion/Internship/firmware/cmake-build-debug-stm32-arm
