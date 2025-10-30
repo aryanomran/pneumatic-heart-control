@@ -55,6 +55,9 @@ add_executable(${PROJECT_NAME}
         Hardware/Inc/Peripherals.h
         Hardware/Inc/Interfaces/IAnalogActuator.h
         Hardware/Inc/Interfaces/IDigitalActuator.h
+        Hardware/Src/Peripherals.cpp
+
+
 )
 
 # Include directories
@@ -68,6 +71,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
         "Middlewares/Third_Party/FreeRTOS/Source/include"
         "Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2"
         "Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F"
+        Hardware/Inc
 )
 
 # Preprocessor definitions
