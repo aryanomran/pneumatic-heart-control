@@ -37,27 +37,25 @@ file(GLOB_RECURSE C_SOURCES
         "Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/*.c"
         "Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/*.c"
 )
-file(GLOB_RECURSE CPP_SOURCES "Core/Src/main.cpp")
+
+# glob for all C++ files
+file(GLOB_RECURSE CPP_SOURCES
+        "Core/Src/*.cpp"
+        "Hardware/Src/*.cpp"
+)
 file(GLOB_RECURSE ASM_SOURCES "startup_stm32g474xx.s")
 
 
+#Filter out the conflicting template files
 list(FILTER C_SOURCES EXCLUDE REGEX ".*main\\.c$")
+list(FILTER C_SOURCES EXCLUDE REGEX ".*stm32g4xx_hal_msp_template\\.c$")
+list(FILTER C_SOURCES EXCLUDE REGEX ".*stm32g4xx_hal_timebase_tim_template\\.c$")
+
 
 add_executable(${PROJECT_NAME}
         ${ASM_SOURCES}
         ${CPP_SOURCES}
         ${C_SOURCES}
-        Hardware/Inc/Interfaces/IAnalogSensor.h
-        Hardware/Inc/Interfaces/IPressureControl.h
-        Hardware/Inc/Interfaces/ISolenoidValve.h
-        Hardware/Inc/Interfaces/IPressureSensor.h
-        Hardware/Inc/PressureRegulatorDriver.h
-        Hardware/Inc/Peripherals.h
-        Hardware/Inc/Interfaces/IAnalogActuator.h
-        Hardware/Inc/Interfaces/IDigitalActuator.h
-        Hardware/Src/Peripherals.cpp
-
-
 )
 
 # Include directories
@@ -92,4 +90,3 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
         OUTPUT_NAME ${PROJECT_NAME}.elf
         LINKER_LANGUAGE CXX
 )
-
