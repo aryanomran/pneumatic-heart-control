@@ -26,6 +26,8 @@ STM32_AnalogIn::STM32_AnalogIn(ADC_HandleTypeDef* hadc, float voltage_multiplier
 /**
  * @brief Reads a single value from the ADC using the polling method.
  */
+
+
 float STM32_AnalogIn::readVoltage()
 {
     if (m_hadc == nullptr)
