@@ -2,11 +2,11 @@
 // Created by Aryan Abbasgholitabaromran on 28/10/2025.
 //
 
-#ifndef FIRMWARE_IDIGITALACTUATOR_H
-#define FIRMWARE_IDIGITALACTUATOR_H
+#ifndef FIRMWARE_DIGITALACTUATOR_H
+#define FIRMWARE_DIGITALACTUATOR_H
 
 /**
- * @file IDigitalActuator.h
+ * @file DigitalActuator.h
  * @brief Abstract interface for a generic digital actuator (on/off).
  *
  * does one job any simple digital output: set its state.
@@ -17,12 +17,12 @@
 
 #pragma once
 
-class IDigitalActuator {
+class DigitalActuator {
 public:
     /**
      * @brief Virtual destructor.
      */
-    virtual ~IDigitalActuator() = default;
+    virtual ~DigitalActuator() = default;
 
     /**
      * @brief Sets the digital output to a high state (3.3V).
@@ -36,4 +36,4 @@ public:
 };
 
 
-#endif //FIRMWARE_IDIGITALACTUATOR_H
+#endif //FIRMWARE_DIGITALACTUATOR_H

@@ -2,11 +2,11 @@
 // Created by Aryan Abbasgholitabaromran on 18/10/2025.
 //
 
-#ifndef FIRMWARE_IPRESSURECONTROL_H
-#define FIRMWARE_IPRESSURECONTROL_H
+#ifndef FIRMWARE_PRESSURECONTROL_H
+#define FIRMWARE_PRESSURECONTROL_H
 
 /**
- * @file IPressureControl.h
+ * @file PressureControl.h
  * @brief Abstract interface for a pressure control system.
  *
  * This is the high-level interface for the RTOS tasks (in the App layer)
@@ -17,12 +17,12 @@
 
 #pragma once
 
-class IPressureControl {
+class PressureControl {
 public:
     /**
      * @brief Virtual destructor.
      */
-    virtual ~IPressureControl() = default;
+    virtual ~PressureControl() = default;
 
     /**
      * @brief Sets the target pressure for the regulator.
@@ -39,4 +39,4 @@ public:
 
 
 
-#endif //FIRMWARE_IPRESSURECONTROL_H
+#endif //FIRMWARE_PRESSURECONTROL_H

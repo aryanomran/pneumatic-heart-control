@@ -2,11 +2,11 @@
 // Created by Aryan Abbasgholitabaromran on 20/10/2025.
 //
 
-#ifndef FIRMWARE_ISOLENOIDVALVE_H
-#define FIRMWARE_ISOLENOIDVALVE_H
+#ifndef FIRMWARE_SOLENOIDVALVE_H
+#define FIRMWARE_SOLENOIDVALVE_H
 
 /**
- * @file ISolenoidValve.h
+ * @file SolenoidValve.h  //
  * @brief Abstract interface for a generic solenoid valve.
  *
  * RTOS tasks will use this to open and close the pneumatic valves.
@@ -14,12 +14,12 @@
 
 #pragma once
 
-class ISolenoidValve {
+class SolenoidValve {
 public:
     /**
      * @brief Virtual destructor.
      */
-    virtual ~ISolenoidValve() = default;
+    virtual ~SolenoidValve() = default;
 
     /**
      * @brief Activates the valve (opens a Normally Closed valve).
@@ -32,4 +32,4 @@ public:
     virtual void deactivate() = 0;
 };
 
-#endif //FIRMWARE_ISOLENOIDVALVE_H
+#endif //FIRMWARE_SOLENOIDVALVE_H

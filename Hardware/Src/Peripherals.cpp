@@ -20,49 +20,49 @@ STM32_AnalogIn::STM32_AnalogIn(ADC_HandleTypeDef* hadc, float voltage_multiplier
         : m_hadc(hadc),        // Store the pointer to the ADC
           m_multiplier(voltage_multiplier) // Store the voltage divider ratio
 {
-
+    // Constructor no longer calls Error_Handler().
+    // A null pointer will be safely caught by readVoltage().
 }
 
 /**
  * @brief Reads a single value from the ADC using the polling method.
+ * @param[out] voltage_out A reference to store the measured voltage.
+ * @return A PeriphStatus code indicating success or failure.
  */
-
-
-float STM32_AnalogIn::readVoltage()
+PeriphStatus STM32_AnalogIn::readVoltage(float& voltage_out)
 {
     if (m_hadc == nullptr)
     {
-        return -1.0f; // Safety check
+        return PeriphStatus::ERROR_NULL_PTR; // Safety check
     }
 
     // 1. Start the ADC conversion
     if (HAL_ADC_Start(m_hadc) != HAL_OK)
     {
-        // Handle Start Error
-        Error_Handler();
-        return -1.0f;    // error value
+        // Handle Start Error - Report, don't halt.
+        return PeriphStatus::ERROR_HAL;
     }
 
     // 2. Wait for the conversion to finish (with a 10ms timeout)
     if (HAL_ADC_PollForConversion(m_hadc, 10) != HAL_OK)
     {
-        // Conversion failed or timed out
-        Error_Handler();
-        return -1.0f;
+        // Conversion failed or timed out - Report, don't halt.
+        HAL_ADC_Stop(m_hadc); // Attempt to stop ADC anyway
+        return PeriphStatus::ERROR_TIMEOUT;
     }
 
     // 3. Get the 12-bit raw value (0-4095)
     uint32_t rawValue = HAL_ADC_GetValue(m_hadc);
 
     // 4. Stop the ADC
-
     HAL_ADC_Stop(m_hadc);
 
     // 5. Convert the raw 12-bit value to a 0-3.3V voltage
     float adcVoltage = ((float)rawValue / 4095.0f) * 3.3f;
 
-    // 6. Apply the multiplier to get the real-world voltage
-    return adcVoltage * m_multiplier;
+    // 6. Apply the multiplier, store in the out-parameter, and return OK
+    voltage_out = adcVoltage * m_multiplier;
+    return PeriphStatus::OK;
 }
 
 
@@ -79,10 +79,14 @@ STM32_AnalogOut::STM32_AnalogOut(DAC_HandleTypeDef* hdac, uint32_t channel, floa
 {
     if (m_hdac == nullptr)
     {
-        Error_Handler();
+        // Error_Handler() removed. The null pointer will be
+        // safely caught by setVoltage() and returned as an error.
     }
-    // Start the DAC peripheral.
-    HAL_DAC_Start(m_hdac, m_channel);
+    else
+    {
+        // Start the DAC peripheral only if the handle is valid.
+        HAL_DAC_Start(m_hdac, m_channel);
+    }
 }
 
 /**
@@ -98,12 +102,13 @@ STM32_AnalogOut::~STM32_AnalogOut()
 
 /**
  * @brief Sets the real-world output voltage.
+ * @return A PeriphStatus code indicating success or failure.
  */
-bool STM32_AnalogOut::setVoltage(float voltage)
+PeriphStatus STM32_AnalogOut::setVoltage(float voltage)
 {
     if (m_hdac == nullptr)
     {
-        return false;
+        return PeriphStatus::ERROR_NULL_PTR;
     }
 
     // 1. Scale the desired real-world voltage down to
@@ -115,16 +120,17 @@ bool STM32_AnalogOut::setVoltage(float voltage)
     if (dacVoltage > 3.3f) dacVoltage = 3.3f;
 
     // 3. Convert the 0-3.3V float value to a 12-bit raw integer (0-4095)
-
     uint32_t dacValue = (uint32_t)((dacVoltage / 3.3f) * 4095.0f);
 
     // 4. Set the DAC hardware value
     if (HAL_DAC_SetValue(m_hdac, m_channel, DAC_ALIGN_12B_R, dacValue) != HAL_OK)
     {
-        Error_Handler();
-        return false;
+        // Report HAL error, don't halt
+        return PeriphStatus::ERROR_HAL;
     }
-    return true;
+
+    // Return success
+    return PeriphStatus::OK;
 }
 
 
@@ -140,11 +146,15 @@ STM32_DigitalOut::STM32_DigitalOut(GPIO_TypeDef* port, uint16_t pin, GPIO_PinSta
           m_pin(pin)
 {
     if (m_port == nullptr)
-    {
-        Error_Handler();
+    { // <-- THE 'D:' WAS REMOVED FROM HERE
+        // Error_Handler() removed. Null pointer will be
+        // safely ignored by setHigh/setLow.
     }
-    // Set the initial state of the pin (I don't know valves is closed on boot or not)
-    HAL_GPIO_WritePin(m_port, m_pin, initialState);
+    else
+    {
+        // Set the initial state of the pin only if the port is valid
+        HAL_GPIO_WritePin(m_port, m_pin, initialState);
+    }
 }
 
 /**
@@ -152,7 +162,11 @@ STM32_DigitalOut::STM32_DigitalOut(GPIO_TypeDef* port, uint16_t pin, GPIO_PinSta
  */
 void STM32_DigitalOut::setHigh()
 {
-    HAL_GPIO_WritePin(m_port, m_pin, GPIO_PIN_SET);
+    // Add null check to prevent crash if constructor failed
+    if (m_port != nullptr)
+    {
+        HAL_GPIO_WritePin(m_port, m_pin, GPIO_PIN_SET);
+    }
 }
 
 /**
@@ -160,7 +174,9 @@ void STM32_DigitalOut::setHigh()
  */
 void STM32_DigitalOut::setLow()
 {
-    HAL_GPIO_WritePin(m_port, m_pin, GPIO_PIN_RESET);
+    // Add null check to prevent crash if constructor failed
+    if (m_port != nullptr)
+    {
+        HAL_GPIO_WritePin(m_port, m_pin, GPIO_PIN_RESET);
+    }
 }
-
-

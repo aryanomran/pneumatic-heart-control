@@ -7,28 +7,28 @@
 
 #pragma once
 
-#include "Interfaces/IPressureControl.h"
-#include "Interfaces/IAnalogSensor.h"
-#include "Interfaces/IAnalogActuator.h"
+#include "Interfaces/PressureControl.h"
+#include "Interfaces/AnalogSensor.h"
+#include "Interfaces/AnalogActuator.h"
 
 /**
  * @file PressureRegulatorDriver.h
  * @brief driver for the Festo VPPE.
  *
- * It implements the IPressureControl interface. Its job is to contain
+ * It implements the PressureControl interface. Its job is to contain
  * the high-level logic and calibration formulas to translate "Bar"
  * (from the App layer) into "Volts" (for the Peripherals layer).
  *
  * It USES the low-level peripherals.cpp to get the work done.
  */
-class PressureRegulatorDriver : public IPressureControl {
+class PressureRegulatorDriver : public PressureControl {
 public:
     /**
      * @brief Constructs a new PressureRegulatorDriver.
      * @param setpointPin setting the output voltage (DAC).
      * @param feedbackPin reading the feedback voltage (ADC).
      */
-    PressureRegulatorDriver(IAnalogActuator& setpointPin, IAnalogSensor& feedbackPin);
+    PressureRegulatorDriver(AnalogActuator& setpointPin, AnalogSensor& feedbackPin);
 
     /**
      * @brief Sets the target pressure.
@@ -46,8 +46,8 @@ public:
 
 private:
     // These are the "Specialists" (Building Blocks) this driver uses.
-    IAnalogActuator& m_setpointPin; // Our "tool" to set the voltage
-    IAnalogSensor& m_feedbackPin;   // Our "tool" to read the voltage
+    AnalogActuator& m_setpointPin; // Our "tool" to set the voltage
+    AnalogSensor& m_feedbackPin;   // Our "tool" to read the voltage
 };
 
 #endif //FIRMWARE_PRESSUREREGULATORDRIVER_H

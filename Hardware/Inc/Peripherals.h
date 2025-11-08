@@ -12,24 +12,37 @@
 #define FIRMWARE_PERIPHERALS_H
 
 
-#include "Interfaces/IAnalogSensor.h"
-#include "Interfaces/IAnalogActuator.h"
-#include "Interfaces/IDigitalActuator.h"
+#include "Interfaces/AnalogSensor.h"
+#include "Interfaces/AnalogActuator.h"
+#include "Interfaces/DigitalActuator.h"
 
 
 #include "main.h"
 #include <stdint.h>
+
+/**
+ * @brief Defines the status codes for the peripheral driver layer.
+ * (This is the new enum for our error type)
+ */
+enum class PeriphStatus : uint8_t
+{
+    OK = 0,             // Operation succeeded
+    ERROR_HAL,          // A generic HAL error occurred
+    ERROR_TIMEOUT,      // The operation timed out
+    ERROR_NULL_PTR,     // The peripheral handle (m_hadc) was null
+    ERROR_INVALID_STATE // The peripheral was not initialized or in a bad state
+};
 
 
 //               ANALOG INPUT (ADC)
 
 /**
  * @class STM32_AnalogIn
- * @brief implementation  for the IAnalogSensor interface.
+ * @brief implementation  for the AnalogSensor interface.
  *
  * job is to ----> how to interact to a single ADC peripheral to read a voltage.
  */
-class STM32_AnalogIn : public IAnalogSensor {
+class STM32_AnalogIn : public AnalogSensor {
 public:
     /**
      * @brief Constructor.
@@ -43,9 +56,11 @@ public:
 
     /**
      * @brief Reads the voltage from the ADC pin.
-     * @return The measured voltage, scaled by the multiplier.
+     * @param[out] voltage_out A reference to store the measured voltage.
+     * @return A PeriphStatus code indicating success or failure.
      */
-    float readVoltage() override;
+    // --- RETURN TYPE CHANGED ---
+    PeriphStatus readVoltage(float& voltage_out) override;
 
 private:
     ADC_HandleTypeDef* m_hadc; // A pointer to the HAL ADC peripheral
@@ -57,11 +72,11 @@ private:
 
 /**
  * @class STM32_AnalogOut
- * @brief implementation for the IAnalogActuator interface.
+ * @brief implementation for the AnalogActuator interface.
  *
  * responsible to interact with the DAC peripheral to set a voltage.
  */
-class STM32_AnalogOut : public IAnalogActuator {
+class STM32_AnalogOut : public AnalogActuator {
 public:
     /**
      * @brief Constructor.
@@ -78,8 +93,10 @@ public:
     /**
      * @brief Sets the output voltage.
      * @param voltage The desired real-world voltage.
+     * @return A PeriphStatus code indicating success or failure.
      */
-    bool setVoltage(float voltage) override;
+    // --- RETURN TYPE CHANGED ---
+    PeriphStatus setVoltage(float voltage) override;
 
 private:
     DAC_HandleTypeDef* m_hdac;
@@ -93,11 +110,11 @@ private:
 
 /**
  * @class STM32_DigitalOut
- * @brief implementation for the IDigitalActuator interface.
+ * @brief implementation for the DigitalActuator interface.
  *
  * talk to a GPIO pin to set it high or low.
  */
-class STM32_DigitalOut : public IDigitalActuator {
+class STM32_DigitalOut : public DigitalActuator {
 public:
     /**
      * @brief Constructor.
@@ -126,4 +143,3 @@ private:
 
 
 #endif //FIRMWARE_PERIPHERALS_H
-

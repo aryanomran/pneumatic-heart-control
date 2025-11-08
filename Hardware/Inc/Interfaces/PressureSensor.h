@@ -2,25 +2,25 @@
 // Created by Aryan Abbasgholitabaromran on 20/10/2025.
 //
 
-#ifndef FIRMWARE_IPRESSURESENSOR_H
-#define FIRMWARE_IPRESSURESENSOR_H
+#ifndef FIRMWARE_PRESSURESENSOR_H
+#define FIRMWARE_PRESSURESENSOR_H
 
 /**
- * @file IPressureSensor.h
+ * @file PressureSensor.h
  * @brief Abstract interface for a pressure sensor.
  * A concrete class (MCLPressureSensor) ----> implement this.
- * That class will use an IAnalogSensor in its constructor to get the
+ * That class will use an AnalogSensor in its constructor to get the
  * raw voltage, which it will then convert using its calibration formula.
  */
 
 #pragma once
 
-class IPressureSensor {
+class PressureSensor {
 public:
     /**
      * @brief Virtual destructor.
      */
-    virtual ~IPressureSensor() = default;
+    virtual ~PressureSensor() = default;
 
     /**
      * @brief Reads the calibrated pressure.
@@ -30,4 +30,4 @@ public:
 };
 
 
-#endif //FIRMWARE_IPRESSURESENSOR_H
+#endif //FIRMWARE_PRESSURESENSOR_H

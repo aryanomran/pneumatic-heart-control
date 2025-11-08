@@ -4,19 +4,20 @@
  * driver for the Festo VPPE.
  *
  * "translate" Bar <-> Volts.
- * It uses (IAnalogActuator, IAnalogSensor) to talk to the hardware.
+ * It uses (AnalogActuator, AnalogSensor) to talk to the hardware.
  */
 
 #include "PressureRegulatorDriver.h"
-
+#include "Peripherals.h"
 
 // inject the dependencies (low-level classes) when the object is created in main.cpp.
-PressureRegulatorDriver::PressureRegulatorDriver(IAnalogActuator& setpointPin, IAnalogSensor& feedbackPin)
+
+PressureRegulatorDriver::PressureRegulatorDriver(AnalogActuator& setpointPin, AnalogSensor& feedbackPin)
         : m_setpointPin(setpointPin),
           m_feedbackPin(feedbackPin)
 {
 
-    // setting the pressure to 0 when the system boots. (I need to ask this)
+    // setting the pressure to 0 when the system boots.
     setPressure(0.0f);
 }
 
@@ -37,8 +38,12 @@ bool PressureRegulatorDriver::setPressure(float bar) {
 
     float voltage_to_set = ((bar - 0.02f) * 5.0f) + 0.1f;
 
+
     // to set that calculated voltage by DAC wrapper
-    return m_setpointPin.setVoltage(voltage_to_set);
+    PeriphStatus status = m_setpointPin.setVoltage(voltage_to_set);
+
+    // Convert the PeriphStatus to the 'bool' this function must return.
+    return (status == PeriphStatus::OK);
 }
 
 
@@ -48,20 +53,27 @@ bool PressureRegulatorDriver::setPressure(float bar) {
  */
 float PressureRegulatorDriver::getActualPressure() {
 
-    // asking from (the ADC wrapper) to read the voltage.
-    float feedback_voltage = m_feedbackPin.readVoltage();
+    // 1. Declare a variable to hold the voltage.
+    float feedback_voltage = 0.0f;
 
-    // Now, apply formula to convert Volts -> Bar
-    // Pressure = (V - 0.1) * (1.98 / 9.9) + 0.02
-    // Pressure = (V - 0.1) * 0.2 + 0.02
+    // 2. Pass that variable by reference to readVoltage.
+    // The function will fill it with the measured value.
+    PeriphStatus status = m_feedbackPin.readVoltage(feedback_voltage);
 
+    // 3. Check if the read failed.
+    if (status != PeriphStatus::OK)
+    {
+        // If we couldn't read the voltage, return 0.0 as a safe value.
+        return 0.0f;
+    }
+
+    // 4. Now, 'feedback_voltage' holds the value,
+    //    and we can apply the formula.
     float pressure_in_bar = ((feedback_voltage - 0.1f) * 0.2f) + 0.02f;
-    // what if the voltage is 0?????
-    // what formula must do?? probably return a small negative number ----> clamp it to 0.
+
     if (pressure_in_bar < 0.0f) {
         pressure_in_bar = 0.0f;
     }
 
     return pressure_in_bar;
 }
-
