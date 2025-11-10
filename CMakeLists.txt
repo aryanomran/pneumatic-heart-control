@@ -30,6 +30,8 @@ set(CMAKE_EXE_LINKER_FLAGS
 
 # Source files
 # Find all source files
+
+# 1. Find all .c files (excluding templates)
 file(GLOB_RECURSE C_SOURCES
         "Core/Src/*.c"
         "Drivers/STM32G4xx_HAL_Driver/Src/*.c"
@@ -37,23 +39,21 @@ file(GLOB_RECURSE C_SOURCES
         "Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/*.c"
         "Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/*.c"
 )
+list(FILTER C_SOURCES EXCLUDE REGEX "stm32g4xx_hal_msp_template\\.c$")
+list(FILTER C_SOURCES EXCLUDE REGEX "stm32g4xx_hal_timebase_tim_template\\.c$")
+list(FILTER C_SOURCES EXCLUDE REGEX ".*main\\.c$")
 
-
-# Find all .cpp files
+# 2. Find all .cpp files in our new source folders
 file(GLOB_RECURSE CPP_SOURCES
         "Core/Src/*.cpp"
         "Hardware/Src/*.cpp"
         "App/Src/*.cpp"
 )
+
+# 3. Find the assembly startup file
 file(GLOB_RECURSE ASM_SOURCES "startup_stm32g474xx.s")
 
-
-#Filter out the conflicting template files
-list(FILTER C_SOURCES EXCLUDE REGEX ".*main\\.c$")
-list(FILTER C_SOURCES EXCLUDE REGEX ".*stm32g4xx_hal_msp_template\\.c$")
-list(FILTER C_SOURCES EXCLUDE REGEX ".*stm32g4xx_hal_timebase_tim_template\\.c$")
-
-
+# 4. Add ALL source files to the executable
 add_executable(${PROJECT_NAME}
         ${ASM_SOURCES}
         ${CPP_SOURCES}
@@ -61,8 +61,6 @@ add_executable(${PROJECT_NAME}
 )
 
 # Include directories
-# --- THIS IS FIX #2 ---
-# Tell the compiler where to find your new header files
 target_include_directories(${PROJECT_NAME} PRIVATE
         Core/Inc
         Drivers/CMSIS/Device/ST/STM32G4xx/Include
@@ -73,7 +71,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
         "Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2"
         "Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F"
 
-        # --- ADDED THESE LINES ---
+
         Hardware/Inc
         Hardware/Inc/Interfaces
         App/Inc
