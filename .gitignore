@@ -1,0 +1,9 @@
+# Build output
+cmake-build-debug-stm32-arm/
+
+# Build artifacts
+.ninja_deps
+.ninja_log
+
+
+*.obj

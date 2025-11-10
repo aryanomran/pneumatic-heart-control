@@ -38,10 +38,12 @@ file(GLOB_RECURSE C_SOURCES
         "Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/*.c"
 )
 
-# glob for all C++ files
+
+# Find all .cpp files
 file(GLOB_RECURSE CPP_SOURCES
         "Core/Src/*.cpp"
         "Hardware/Src/*.cpp"
+        "App/Src/*.cpp"
 )
 file(GLOB_RECURSE ASM_SOURCES "startup_stm32g474xx.s")
 
@@ -59,7 +61,8 @@ add_executable(${PROJECT_NAME}
 )
 
 # Include directories
-
+# --- THIS IS FIX #2 ---
+# Tell the compiler where to find your new header files
 target_include_directories(${PROJECT_NAME} PRIVATE
         Core/Inc
         Drivers/CMSIS/Device/ST/STM32G4xx/Include
@@ -69,7 +72,12 @@ target_include_directories(${PROJECT_NAME} PRIVATE
         "Middlewares/Third_Party/FreeRTOS/Source/include"
         "Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2"
         "Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F"
+
+        # --- ADDED THESE LINES ---
         Hardware/Inc
+        Hardware/Inc/Interfaces
+        App/Inc
+        App/Inc/Tasks
 )
 
 # Preprocessor definitions
