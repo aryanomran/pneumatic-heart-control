@@ -6,4 +6,4 @@ cmake-build-debug-stm32-arm/
 .ninja_log
 
 
-*.obj
+*.objcmake-build-debug-stm32-arm/
