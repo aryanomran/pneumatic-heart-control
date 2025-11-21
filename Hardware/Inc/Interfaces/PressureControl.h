@@ -2,41 +2,41 @@
 // Created by Aryan Abbasgholitabaromran on 18/10/2025.
 //
 
+
 #ifndef FIRMWARE_PRESSURECONTROL_H
 #define FIRMWARE_PRESSURECONTROL_H
 
+#pragma once
+#include "../CommonTypes.h"
+
 /**
  * @file PressureControl.h
- * @brief Abstract interface for a pressure control system.
- *
- * This is the high-level interface for the RTOS tasks (in the App layer)
- * will use to command the pressure regulator.
- *
- * It hides all the implementation details (like the Festo VPPE) from the application.
+ * @brief Abstract interface for a pressure control system (Regulator).
  */
-
-#pragma once
 
 class PressureControl {
 public:
-    /**
-     * @brief Virtual destructor.
-     */
     virtual ~PressureControl() = default;
 
     /**
-     * @brief Sets the target pressure for the regulator.
-     * @param bar The desired pressure in Bar (0.0 to 2.0).
+     * @brief Initializes the regulator hardware.
      */
-    virtual bool setPressure(float bar) = 0;
+    [[nodiscard]] virtual PeriphStatus init() = 0;
 
     /**
-     * @brief Reads the actual measured pressure from the regulator's feedback.
-     * @return The measured pressure in Bar.
+     * @brief Sets the target pressure safely.
+     * @param pressure_bar The desired pressure in Bar.
+     * @return PeriphStatus::OK if the command was accepted.
+     * Returns ERROR_OUT_OF_RANGE if pressure_bar > MaxSafeLimit.
      */
-    virtual float getActualPressure() = 0;
+    [[nodiscard]] virtual PeriphStatus setTargetPressure_Bar(float pressure_bar) = 0;
+
+    /**
+     * @brief Reads the actual measured pressure.
+     * @param[out] pressure_out Reference to store the result.
+     * @return PeriphStatus::OK if reading is valid.
+     */
+    [[nodiscard]] virtual PeriphStatus getActualPressure_Bar(float& pressure_out) const = 0;
 };
-
-
 
 #endif //FIRMWARE_PRESSURECONTROL_H

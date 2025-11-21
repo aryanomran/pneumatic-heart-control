@@ -6,31 +6,28 @@
 #define FIRMWARE_ANALOGSENSOR_H
 
 #pragma once
-#include <cstdint>
+#include "../CommonTypes.h"
 
 /**
  * @file AnalogSensor.h
  * @brief An abstract interface for any generic analog sensor.
  */
 
-
-enum class PeriphStatus : uint8_t;
-
 class AnalogSensor {
 public:
-    /**
-     * @brief Virtual destructor.
-     */
     virtual ~AnalogSensor() = default;
+
+    /**
+     * @brief Initializes the ADC/Sensor hardware.
+     */
+    [[nodiscard]] virtual PeriphStatus init() = 0;
 
     /**
      * @brief Reads the raw voltage from the sensor.
      * @param[out] voltage_out A reference to store the measured voltage.
-     * @return A PeriphStatus code indicating success or failure.
+     * @return PeriphStatus::OK if the reading is valid.
      */
-
-    virtual PeriphStatus readVoltage(float& voltage_out) = 0;
+    [[nodiscard]] virtual PeriphStatus readVoltage(float& voltage_out) = 0;
 };
-
 
 #endif //FIRMWARE_ANALOGSENSOR_H

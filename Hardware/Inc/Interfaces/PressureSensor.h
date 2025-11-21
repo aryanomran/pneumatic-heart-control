@@ -5,15 +5,16 @@
 #ifndef FIRMWARE_PRESSURESENSOR_H
 #define FIRMWARE_PRESSURESENSOR_H
 
+#pragma once
+
+// Include PeriphStatus'
+#include "../CommonTypes.h"
+
 /**
  * @file PressureSensor.h
  * @brief Abstract interface for a pressure sensor.
- * A concrete class (MCLPressureSensor) ----> implement this.
- * That class will use an AnalogSensor in its constructor to get the
- * raw voltage, which it will then convert using its calibration formula.
+ * Returns a Status Code, passes data by reference.
  */
-
-#pragma once
 
 class PressureSensor {
 public:
@@ -23,11 +24,20 @@ public:
     virtual ~PressureSensor() = default;
 
     /**
-     * @brief Reads the calibrated pressure.
-     * @return The measured pressure in a standard unit (mmHg or Bar).
+     * @brief Initializes the sensor hardware (if needed).
+     *  like Checks ID register, sets up I2C config, etc.
+     * @return PeriphStatus::OK if initialization successful.
      */
-    virtual float readPressure_mmHg() = 0;
-};
+    [[nodiscard]] virtual PeriphStatus init() = 0;
 
+    /**
+     * @brief Reads the calibrated pressure safely.
+     * * @param[out] pressure_out A reference to store the result (in mmHg).
+     * This value is only valid if the function returns OK.
+     * @return PeriphStatus::OK if the reading was successful.
+     * PeriphStatus::ERROR_TIMEOUT if sensor didn't respond.
+     */
+    [[nodiscard]] virtual PeriphStatus readPressure_mmHg(float& pressure_out) = 0;
+};
 
 #endif //FIRMWARE_PRESSURESENSOR_H
