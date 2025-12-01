@@ -12,7 +12,10 @@
 
 #include "Peripherals.h"
 
-//               ANALOG INPUT (ADC)
+
+//           ANALOG INPUT (ADC)
+
+
 /**
  * @brief Constructor: Stores the pointer to the ADC and the multiplier.
  */
@@ -20,8 +23,21 @@ STM32_AnalogIn::STM32_AnalogIn(ADC_HandleTypeDef* hadc, float voltage_multiplier
         : m_hadc(hadc),        // Store the pointer to the ADC
           m_multiplier(voltage_multiplier) // Store the voltage divider ratio
 {
-    // Constructor no longer calls Error_Handler().
-    // A null pointer will be safely caught by readVoltage().
+
+}
+
+/**
+ * @brief Starts the ADC (if needed for continuous mode, etc.).
+ * For polling, we often just check the handle validity.
+ */
+PeriphStatus STM32_AnalogIn::init()
+{
+    if (m_hadc == nullptr)
+    {
+        return PeriphStatus::ERROR_NULL_PTR;
+    }
+
+    return PeriphStatus::OK;
 }
 
 /**
@@ -67,26 +83,19 @@ PeriphStatus STM32_AnalogIn::readVoltage(float& voltage_out)
 
 
 
-//               ANALOG OUTPUT (DAC) IMPLEMENTATION
+
+//           ANALOG OUTPUT (DAC)
+
 
 /**
- * @brief Constructor: Stores the DAC handle, channel, and starts the DAC.
+ * @brief Constructor: Stores the DAC handle, channel.
  */
 STM32_AnalogOut::STM32_AnalogOut(DAC_HandleTypeDef* hdac, uint32_t channel, float divider_ratio)
         : m_hdac(hdac),
           m_channel(channel),
           m_divider_ratio(divider_ratio)
 {
-    if (m_hdac == nullptr)
-    {
-        // Error_Handler() removed. The null pointer will be
-        // safely caught by setVoltage() and returned as an error.
-    }
-    else
-    {
-        // Start the DAC peripheral only if the handle is valid.
-        HAL_DAC_Start(m_hdac, m_channel);
-    }
+
 }
 
 /**
@@ -98,6 +107,25 @@ STM32_AnalogOut::~STM32_AnalogOut()
     {
         HAL_DAC_Stop(m_hdac, m_channel);
     }
+}
+
+/**
+ * @brief Initializes the DAC peripheral.
+ */
+PeriphStatus STM32_AnalogOut::init()
+{
+    if (m_hdac == nullptr)
+    {
+        return PeriphStatus::ERROR_NULL_PTR;
+    }
+
+    // Start the DAC peripheral
+    if (HAL_DAC_Start(m_hdac, m_channel) != HAL_OK)
+    {
+        return PeriphStatus::ERROR_HAL;
+    }
+
+    return PeriphStatus::OK;
 }
 
 /**
@@ -135,7 +163,9 @@ PeriphStatus STM32_AnalogOut::setVoltage(float voltage)
 
 
 
-//               DIGITAL OUTPUT (GPIO) IMPLEMENTATION
+
+//           DIGITAL OUTPUT (GPIO)
+
 
 
 /**
@@ -145,15 +175,36 @@ STM32_DigitalOut::STM32_DigitalOut(GPIO_TypeDef* port, uint16_t pin, GPIO_PinSta
         : m_port(port),
           m_pin(pin)
 {
-    if (m_port == nullptr)
-    { // <-- THE 'D:' WAS REMOVED FROM HERE
-        // Error_Handler() removed. Null pointer will be
-        // safely ignored by setHigh/setLow.
-    }
-    else
+
+    if (m_port != nullptr)
     {
-        // Set the initial state of the pin only if the port is valid
         HAL_GPIO_WritePin(m_port, m_pin, initialState);
+    }
+}
+
+/**
+ * @brief Initializes the GPIO.
+ */
+PeriphStatus STM32_DigitalOut::init()
+{
+    if (m_port == nullptr)
+    {
+        return PeriphStatus::ERROR_NULL_PTR;
+    }
+
+    return PeriphStatus::OK;
+}
+
+/**
+ * @brief Writes a boolean state to the pin.
+ * @param state true = High (3.3V), false = Low (GND).
+ */
+void STM32_DigitalOut::write(bool state)
+{
+    if (state) {
+        setHigh();
+    } else {
+        setLow();
     }
 }
 
@@ -162,7 +213,6 @@ STM32_DigitalOut::STM32_DigitalOut(GPIO_TypeDef* port, uint16_t pin, GPIO_PinSta
  */
 void STM32_DigitalOut::setHigh()
 {
-    // Add null check to prevent crash if constructor failed
     if (m_port != nullptr)
     {
         HAL_GPIO_WritePin(m_port, m_pin, GPIO_PIN_SET);
@@ -174,9 +224,64 @@ void STM32_DigitalOut::setHigh()
  */
 void STM32_DigitalOut::setLow()
 {
-    // Add null check to prevent crash if constructor failed
     if (m_port != nullptr)
     {
         HAL_GPIO_WritePin(m_port, m_pin, GPIO_PIN_RESET);
     }
+}
+
+/**
+ * @brief Toggles the current state (High->Low or Low->High).
+ */
+void STM32_DigitalOut::toggle()
+{
+    if (m_port != nullptr)
+    {
+        HAL_GPIO_TogglePin(m_port, m_pin);
+    }
+}
+
+
+
+//           SOLENOID VALVE
+
+
+// Constructor
+STM32_Solenoid::STM32_Solenoid(GPIO_TypeDef* port, uint16_t pin, bool activeLow)
+        : m_port(port),
+          m_pin(pin),
+          m_activeLow(activeLow)
+{
+}
+
+// Init: Ensure the valve starts in a safe (closed) state
+PeriphStatus STM32_Solenoid::init() {
+    if (m_port == nullptr) return PeriphStatus::ERROR_NULL_PTR;
+
+    // Automatically close the valve on startup for safety
+    deactivate();
+
+    return PeriphStatus::OK;
+}
+
+// Activate: Energize the valve (Open it)
+PeriphStatus STM32_Solenoid::activate() {
+    if (m_port == nullptr) return PeriphStatus::ERROR_NULL_PTR;
+
+    // Logic: If ActiveLow,  write RESET to Activate. Else  write SET.
+    GPIO_PinState state = m_activeLow ? GPIO_PIN_RESET : GPIO_PIN_SET;
+
+    HAL_GPIO_WritePin(m_port, m_pin, state);
+    return PeriphStatus::OK;
+}
+
+// Deactivate: De-energize the valve (Close it)
+PeriphStatus STM32_Solenoid::deactivate() {
+    if (m_port == nullptr) return PeriphStatus::ERROR_NULL_PTR;
+
+    // Logic: If ActiveLow,  write SET to Deactivate (Turn off). Else  write RESET.
+    GPIO_PinState state = m_activeLow ? GPIO_PIN_SET : GPIO_PIN_RESET;
+
+    HAL_GPIO_WritePin(m_port, m_pin, state);
+    return PeriphStatus::OK;
 }
