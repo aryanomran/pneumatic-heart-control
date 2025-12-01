@@ -4,7 +4,6 @@
  * This file implements the logic for the ControlTask C++ class.
  */
 
-
 #include "Tasks/control_task.h"
 #include "config_data.h"
 
@@ -23,7 +22,6 @@ ControlTask::ControlTask(PressureControl* pPressureRegulator,
           m_pDiastoleValve(pDiastoleValve),
           m_commandQueue(commandQueue)
 {
-
 }
 
 /**
@@ -46,7 +44,7 @@ void ControlTask::start()
 /**
  * @brief The static "trampoline" function for FreeRTOS.
  *
- * Its one taks is to "launch" the C++ "run" method.
+ * Its one task is to "launch" the C++ "run" method.
  */
 void ControlTask::taskLauncher(void* argument)
 {
@@ -55,6 +53,19 @@ void ControlTask::taskLauncher(void* argument)
 
     // 2. Call the real C++ "run" method
     taskInstance->run();
+}
+
+/**
+ * @brief Helper to enter the SAFE STATE (Deflate/Exhale).
+ * Called when a hardware error is detected.
+ */
+void ControlTask::enterSafeState()
+{
+    // 1. Close the intake valve immediately (Stop filling)
+    m_pSystoleValve->deactivate();
+
+    // 2. Open the exhaust/vacuum valve (Release pressure to safe level)
+    m_pDiastoleValve->activate();
 }
 
 /**
@@ -82,16 +93,20 @@ void ControlTask::run()
                 {
                     // --- SYSTOLE LOGIC ---
 
-                    // 1. Set pressure from the global config
-                    // FIX: Renamed setPressure -> setTargetPressure_Bar
-                    m_pPressureRegulator->setTargetPressure_Bar(g_systemConfig.systolePressure_bar);
+                    // 1. Try to set the target pressure
+                    PeriphStatus regStatus = m_pPressureRegulator->setTargetPressure_Bar(g_systemConfig.systolePressure_bar);
 
-                    // 2. Close the vacuum valve first (safety)
-                    m_pDiastoleValve->deactivate();
-
-                    // 3. Open the pressure valve
-                    m_pSystoleValve->activate();
-
+                    // 2. SAFETY CHECK: Did the hardware accept the command?
+                    if (regStatus != PeriphStatus::OK) {
+                        // CRITICAL ERROR: Regulator failed (e.g. disconnected, unsafe value)
+                        // Action: Abort Systole. Go to Safe State.
+                        enterSafeState();
+                    }
+                    else {
+                        // Success: Proceed with normal sequence
+                        m_pDiastoleValve->deactivate(); // Close vacuum first (Safety)
+                        m_pSystoleValve->activate();    // Open pressure
+                    }
                     break;
                 }
 
@@ -99,16 +114,20 @@ void ControlTask::run()
                 {
                     // --- DIASTOLE LOGIC ---
 
-                    // 1. Set pressure from the global config
-                    // FIX: Renamed setPressure -> setTargetPressure_Bar
-                    m_pPressureRegulator->setTargetPressure_Bar(g_systemConfig.diastolePressure_bar);
+                    // 1. Try to set the target pressure
+                    PeriphStatus regStatus = m_pPressureRegulator->setTargetPressure_Bar(g_systemConfig.diastolePressure_bar);
 
-                    // 2. Close the pressure valve first (safety)
-                    m_pSystoleValve->deactivate();
-
-                    // 3. Open the vacuum valve
-                    m_pDiastoleValve->activate();
-
+                    // 2. SAFETY CHECK
+                    if (regStatus != PeriphStatus::OK) {
+                        // Even if setting diastole pressure fails, we must ensure
+                        // we don't leave the high pressure valve open.
+                        enterSafeState();
+                    }
+                    else {
+                        // Success: Proceed with normal sequence
+                        m_pSystoleValve->deactivate(); // Close pressure first (Safety)
+                        m_pDiastoleValve->activate();  // Open vacuum
+                    }
                     break;
                 }
             }

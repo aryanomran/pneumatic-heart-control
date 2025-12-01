@@ -17,7 +17,7 @@
 #include "Interfaces/PressureControl.h"
 #include "Interfaces/SolenoidValve.h"
 
- // Boss here means ---> PressureRegulatorDriver
+// Boss here means ---> PressureRegulatorDriver
 class ControlTask {
 public:
     /**
@@ -50,6 +50,12 @@ private:
      * @param argument A void pointer to the "this" instance of the class.
      */
     static void taskLauncher(void* argument);
+
+    /**
+     * @brief Enters a Safe State (Deflate/Exhale) immediately.
+     * Called when a critical hardware error is detected.
+     */
+    void enterSafeState();
 
     // --- Private Member Variables (The "Tools") ---
     PressureControl* m_pPressureRegulator;
