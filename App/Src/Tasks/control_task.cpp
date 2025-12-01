@@ -6,6 +6,7 @@
 
 
 #include "Tasks/control_task.h"
+#include "config_data.h"
 
 /**
  * @brief This is the constructor.
@@ -81,9 +82,9 @@ void ControlTask::run()
                 {
                     // --- SYSTOLE LOGIC ---
 
-                    // 1. Set the pressure regulator to 1.2 Bar (this is for now then I change it i a way that we can connect it to the GUI)
-
-                    m_pPressureRegulator->setPressure(1.2f);
+                    // 1. Set pressure from the global config
+                    // FIX: Renamed setPressure -> setTargetPressure_Bar
+                    m_pPressureRegulator->setTargetPressure_Bar(g_systemConfig.systolePressure_bar);
 
                     // 2. Close the vacuum valve first (safety)
                     m_pDiastoleValve->deactivate();
@@ -98,8 +99,9 @@ void ControlTask::run()
                 {
                     // --- DIASTOLE LOGIC ---
 
-                    // 1. Set the pressure regulator to 0 Bar
-                    m_pPressureRegulator->setPressure(0.0f);
+                    // 1. Set pressure from the global config
+                    // FIX: Renamed setPressure -> setTargetPressure_Bar
+                    m_pPressureRegulator->setTargetPressure_Bar(g_systemConfig.diastolePressure_bar);
 
                     // 2. Close the pressure valve first (safety)
                     m_pSystoleValve->deactivate();
