@@ -10,44 +10,49 @@
 #include "Interfaces/PressureControl.h"
 #include "Interfaces/AnalogSensor.h"
 #include "Interfaces/AnalogActuator.h"
+// RegulatorConfig is defined in CommonTypes.h, which is included by the interfaces above.
 
-/**
- * @file PressureRegulatorDriver.h
- * @brief driver for the Festo VPPE.
- *
- * It implements the PressureControl interface. Its job is to contain
- * the high-level logic and calibration formulas to translate "Bar"
- * (from the App layer) into "Volts" (for the Peripherals layer).
- *
- * It USES the low-level peripherals.cpp to get the work done.
- */
 class PressureRegulatorDriver : public PressureControl {
 public:
     /**
-     * @brief Constructs a new PressureRegulatorDriver.
-     * @param setpointPin setting the output voltage (DAC).
-     * @param feedbackPin reading the feedback voltage (ADC).
+     * @brief Constructs a new PressureRegulatorDriver with specific limits.
+     * * @param setpointPin The DAC interface to set voltage.
+     * @param feedbackPin The ADC interface to read voltage.
+     * @param config The struct containing Min/Max Pressure, Min/Max Voltage, and Safety Limits.
+     * This replaces "magic numbers" and "isVacuum" flags.
      */
-    PressureRegulatorDriver(AnalogActuator& setpointPin, AnalogSensor& feedbackPin);
+    PressureRegulatorDriver(AnalogActuator& setpointPin,
+                            AnalogSensor& feedbackPin,
+                            const RegulatorConfig& config);
 
     /**
-     * @brief Sets the target pressure.
-     * Translates Bar -> Volts and tells the DAC.
-     * @param bar The desired pressure in Bar.
+     * @brief Sets the target pressure safely.
+     * Uses the linear interpolation formula from the config struct.
+     * Checks against config.safeMaxPressure before applying.
      */
-    bool setPressure(float bar) override;
+    PeriphStatus setTargetPressure_Bar(float pressure_bar) override;
 
     /**
      * @brief Reads the actual pressure.
-     * Reads Volts from the ADC and translates Volts -> Bar.
-     * @return The measured pressure in Bar.
+     * Converts Voltage -> Bar using the config struct.
      */
-    float getActualPressure() override;
+    PeriphStatus getActualPressure_Bar(float& pressure_out) const override;
+
+    /**
+     * @brief Initialize the driver and underlying hardware.
+     */
+    PeriphStatus init() override {
+        if(m_setpointPin.init() != PeriphStatus::OK) return PeriphStatus::ERROR_HAL;
+        if(m_feedbackPin.init() != PeriphStatus::OK) return PeriphStatus::ERROR_HAL;
+        return PeriphStatus::OK;
+    }
 
 private:
-    // These are the "Specialists" (Building Blocks) this driver uses.
-    AnalogActuator& m_setpointPin; // Our "tool" to set the voltage
-    AnalogSensor& m_feedbackPin;   // Our "tool" to read the voltage
+    AnalogActuator& m_setpointPin;
+    AnalogSensor& m_feedbackPin;
+
+    // The configuration for this specific instance (Vacuum or Pressure)
+    RegulatorConfig m_config;
 };
 
 #endif //FIRMWARE_PRESSUREREGULATORDRIVER_H

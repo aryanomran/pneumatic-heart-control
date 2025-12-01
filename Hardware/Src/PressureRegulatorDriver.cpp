@@ -1,79 +1,58 @@
 /*
  * Created by Aryan Abbasgholitabaromran on 2025-10-30.
- *
- * driver for the Festo VPPE.
- *
- * "translate" Bar <-> Volts.
- * It uses (AnalogActuator, AnalogSensor) to talk to the hardware.
  */
 
-#include "PressureRegulatorDriver.h"
-#include "Peripherals.h"
+#ifndef FIRMWARE_PRESSUREREGULATORDRIVER_H
+#define FIRMWARE_PRESSUREREGULATORDRIVER_H
 
-// inject the dependencies (low-level classes) when the object is created in main.cpp.
+#pragma once
 
-PressureRegulatorDriver::PressureRegulatorDriver(AnalogActuator& setpointPin, AnalogSensor& feedbackPin)
-        : m_setpointPin(setpointPin),
-          m_feedbackPin(feedbackPin)
-{
+#include "Interfaces/PressureControl.h"
+#include "Interfaces/AnalogSensor.h"
+#include "Interfaces/AnalogActuator.h"
+// RegulatorConfig is defined in CommonTypes.h, which is included by the interfaces above.
 
-    // setting the pressure to 0 when the system boots.
-    setPressure(0.0f);
-}
+class PressureRegulatorDriver : public PressureControl {
+public:
+    /**
+     * @brief Constructs a new PressureRegulatorDriver with specific limits.
+     * * @param setpointPin The DAC interface to set voltage.
+     * @param feedbackPin The ADC interface to read voltage.
+     * @param config The struct containing Min/Max Pressure, Min/Max Voltage, and Safety Limits.
+     * This replaces "magic numbers" and "isVacuum" flags.
+     */
+    PressureRegulatorDriver(AnalogActuator& setpointPin,
+                            AnalogSensor& feedbackPin,
+                            const RegulatorConfig& config);
 
+    /**
+     * @brief Sets the target pressure safely.
+     * Uses the linear interpolation formula from the config struct.
+     * Checks against config.safeMaxPressure before applying.
+     */
+    PeriphStatus setTargetPressure_Bar(float pressure_bar) override;
 
-/**
- * @brief Sets the target pressure.
- * This function is the "translator" that converts Bar (from the App layer)
- * into Volts (for the Hardware layer).
- */
-bool PressureRegulatorDriver::setPressure(float bar) {
+    /**
+     * @brief Reads the actual pressure.
+     * Converts Voltage -> Bar using the config struct.
+     */
+    PeriphStatus getActualPressure_Bar(float& pressure_out) const override;
 
-    // the calibration formula:
-    // Pressure = (V - 0.1) * (1.98 / 9.9) + 0.02
-    //
-    // reverse formula to solve for V (Voltage):
-    // V = ((Pressure - 0.02) * (9.9 / 1.98)) + 0.1
-    // V = ((Pressure - 0.02) * 5.0) + 0.1
-
-    float voltage_to_set = ((bar - 0.02f) * 5.0f) + 0.1f;
-
-
-    // to set that calculated voltage by DAC wrapper
-    PeriphStatus status = m_setpointPin.setVoltage(voltage_to_set);
-
-    // Convert the PeriphStatus to the 'bool' this function must return.
-    return (status == PeriphStatus::OK);
-}
-
-
-/**
- * @brief Reads the actual measured pressure.
- * that converts Volts (from the Hardware layer) into Bar (for the App layer).
- */
-float PressureRegulatorDriver::getActualPressure() {
-
-    // 1. Declare a variable to hold the voltage.
-    float feedback_voltage = 0.0f;
-
-    // 2. Pass that variable by reference to readVoltage.
-    // The function will fill it with the measured value.
-    PeriphStatus status = m_feedbackPin.readVoltage(feedback_voltage);
-
-    // 3. Check if the read failed.
-    if (status != PeriphStatus::OK)
-    {
-        // If we couldn't read the voltage, return 0.0 as a safe value.
-        return 0.0f;
+    /**
+     * @brief Initialize the driver and underlying hardware.
+     */
+    PeriphStatus init() override {
+        if(m_setpointPin.init() != PeriphStatus::OK) return PeriphStatus::ERROR_HAL;
+        if(m_feedbackPin.init() != PeriphStatus::OK) return PeriphStatus::ERROR_HAL;
+        return PeriphStatus::OK;
     }
 
-    // 4. Now, 'feedback_voltage' holds the value,
-    //    and we can apply the formula.
-    float pressure_in_bar = ((feedback_voltage - 0.1f) * 0.2f) + 0.02f;
+private:
+    AnalogActuator& m_setpointPin;
+    AnalogSensor& m_feedbackPin;
 
-    if (pressure_in_bar < 0.0f) {
-        pressure_in_bar = 0.0f;
-    }
+    // The configuration for this specific instance (Vacuum or Pressure)
+    RegulatorConfig m_config;
+};
 
-    return pressure_in_bar;
-}
+#endif //FIRMWARE_PRESSUREREGULATORDRIVER_H
